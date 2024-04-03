@@ -1,0 +1,28 @@
+{
+  "name": "where-is-my-corolla",
+  "version": "1.0.0",
+  "description": "Telegram bot for knowing where your fancy new Corolla is",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p .",
+    "build:dev": "tsc -w -p .",
+    "start": "node build/index.js",
+    "start:dev": "export WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN=<your-telegram-bot-apitoken> && export WHERE_IS_MY_COROLLA_USERNAME=<your-toyota-username> && export WHERE_IS_MY_COROLLA_PASSWORD=<your-toyota-password> && tsx watch src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "José María Hernández Martos",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/lodash": "^4.17.0",
+    "@types/node": "^20.12.3",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.3"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "lodash": "^4.17.21",
+    "telegraf": "^4.16.3",
+    "ts-node": "^10.9.2"
+  }
+}
