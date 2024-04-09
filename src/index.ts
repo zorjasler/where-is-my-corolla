@@ -4,12 +4,11 @@ import { ResponseData } from "./types";
 import { fetch, parseData } from "./utils";
 
 const { WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN } = process.env;
-const INTERVAL = 300000;
+const INTERVAL = 3600000; // 1h
 
 // Initialize your bot with your bot token
 const bot = new Telegraf(WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN as string);
 
-let lastResponseData: ResponseData | undefined;
 let interval: NodeJS.Timeout;
 
 // Middleware to log messages
@@ -19,30 +18,42 @@ bot.use((ctx: Context, next) => {
 });
 
 async function pollData(ctx: Context) {
-  const responseData = await fetch();
-  if (responseData && !_.isEqual(lastResponseData, responseData)) {
-    console.log("Changes!");
-    lastResponseData = _.cloneDeep(responseData);
-    return ctx.reply(parseData(lastResponseData) as string, {
-      parse_mode: "HTML",
-    });
+  const responseData = await fetch() as ResponseData;
+  if (!responseData) {
+    console.log("There are no active orders to track");
+    return ctx.reply("There are no active orders to track");
   }
-  console.log("No changes");
+  return ctx.reply(parseData(responseData) as string, {
+    parse_mode: "HTML",
+  });
 }
 
 // Command handler
 bot.command("start", async (ctx: Context) => {
   console.log("Fetching for the first time");
-  lastResponseData = await fetch();
-  if (!lastResponseData) {
-    console.log("There are no active orders to track");
-    return ctx.reply("There are no active orders to track");
+  const responseData = await fetch();
+  if (!responseData) {
+    const msg = 'There are no active orders to track; retrying in 1h';
+    console.log(msg);
+    return ctx.reply(msg);
   }
   interval = setInterval(async () => {
     await pollData(ctx);
   }, INTERVAL);
   ctx.reply("Polling has started");
-  return ctx.reply(parseData(lastResponseData) as string, {
+  return ctx.reply(parseData(responseData) as string, {
+    parse_mode: "HTML",
+  });
+});
+
+bot.command("fetchonce", async (ctx: Context) => {
+  const responseData = await fetch();
+  if (!responseData) {
+    const msg = 'There are no active orders to track';
+    console.log(msg);
+    return ctx.reply(msg);
+  }
+  return ctx.reply(parseData(responseData) as string, {
     parse_mode: "HTML",
   });
 });
@@ -51,6 +62,10 @@ bot.command("stop", (ctx: Context) => {
   clearInterval(interval);
   console.log("Polling has stopped");
   return ctx.reply("Polling has stopped");
+});
+
+bot.on("message", (ctx: Context) => {
+  return ctx.reply((ctx.message as any).text);
 });
 
 // Start the bot
