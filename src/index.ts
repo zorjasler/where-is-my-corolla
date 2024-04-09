@@ -1,10 +1,11 @@
 import _ from "lodash";
 import { Telegraf, Context } from "telegraf";
 import { ResponseData } from "./types";
-import { fetch, parseData } from "./utils";
+import { checkForChanges, fetch, parseData } from "./utils";
 
 const { WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN } = process.env;
 const INTERVAL = 3600000; // 1h
+let lastResponseData: ResponseData | undefined;
 
 // Initialize your bot with your bot token
 const bot = new Telegraf(WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN as string);
@@ -23,9 +24,15 @@ async function pollData(ctx: Context) {
     console.log("There are no active orders to track");
     return ctx.reply("There are no active orders to track");
   }
-  return ctx.reply(parseData(responseData) as string, {
-    parse_mode: "HTML",
-  });
+  if (checkForChanges(responseData, lastResponseData)) {
+    console.log('Changes!');
+    // Set most recent response for comparison
+    lastResponseData = _.cloneDeep(responseData);
+    return ctx.reply(parseData(responseData) as string, {
+      parse_mode: "HTML",
+    });
+  }
+  console.log('No Changes');
 }
 
 // Command handler
@@ -33,10 +40,13 @@ bot.command("start", async (ctx: Context) => {
   console.log("Fetching for the first time");
   const responseData = await fetch();
   if (!responseData) {
-    const msg = 'There are no active orders to track; retrying in 1h';
+    const msg = 'There are no active orders to track';
     console.log(msg);
     return ctx.reply(msg);
   }
+  // Set most recent response for comparison
+  lastResponseData = _.cloneDeep(responseData);
+  // Set polling interval
   interval = setInterval(async () => {
     await pollData(ctx);
   }, INTERVAL);
@@ -60,6 +70,7 @@ bot.command("fetchonce", async (ctx: Context) => {
 
 bot.command("stop", (ctx: Context) => {
   clearInterval(interval);
+  lastResponseData = undefined;
   console.log("Polling has stopped");
   return ctx.reply("Polling has stopped");
 });

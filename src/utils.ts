@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Car, IntermediateDelivery, ResponseData } from "./types";
+import hash from 'object-hash';
 
 const { WHERE_IS_MY_COROLLA_USERNAME, WHERE_IS_MY_COROLLA_PASSWORD } =
   process.env;
@@ -70,6 +71,14 @@ export async function fetch(): Promise<ResponseData | undefined> {
     response = await fetchOrder(userId, carId, token);
   }
   return response;
+}
+
+export function checkForChanges(newData: ResponseData, oldData: ResponseData | undefined): boolean {
+  const newDataHash = hash(newData);
+  const oldDataHash = hash(oldData ? oldData : '');
+  console.log('New data hash', newDataHash);
+  console.log('Old data hash', oldDataHash);
+  return newDataHash !== oldDataHash;
 }
 
 export function parseData(data: ResponseData): string {
