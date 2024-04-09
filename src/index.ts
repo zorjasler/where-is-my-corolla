@@ -14,7 +14,7 @@ let interval: NodeJS.Timeout;
 
 // Middleware to log messages
 bot.use((ctx: Context, next) => {
-  console.log("Received:", ctx.message);
+  console.log("Received:", JSON.stringify(ctx.message, null, 2));
   return next();
 });
 
