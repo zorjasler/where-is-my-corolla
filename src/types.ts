@@ -84,3 +84,9 @@ export interface Car {
   type: string;
   user: User;
 }
+
+export enum States {
+  NOT_STARTED = 'NOT_STARTED',
+  STARTED = 'STARTED',
+  STOPPED = 'STOPPED',
+}
