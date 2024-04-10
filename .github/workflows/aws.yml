@@ -88,7 +88,7 @@ jobs:
         # Build a docker container and
         # push it to ECR so that it can
         # be deployed to ECS.
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker build --build-arg WHERE_IS_MY_COROLLA_USERNAME=$WHERE_IS_MY_COROLLA_USERNAME --build-arg WHERE_IS_MY_COROLLA_PASSWORD=$WHERE_IS_MY_COROLLA_PASSWORD --build-arg WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN=$WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
