@@ -3,13 +3,13 @@ import { Telegraf, Context } from "telegraf";
 import { ResponseData, States } from "./types";
 import { checkForChanges, fetch, parseData } from "./utils";
 
-const { WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN } = process.env;
+const { WHERE_IS_MY_COROLLA_APITOKEN } = process.env;
 const INTERVAL = 60; // 60 * 60 * 1000 = 1h
 let lastResponseData: ResponseData | undefined;
 let state = States.NOT_STARTED;
 
 // Initialize your bot with your bot token
-const bot = new Telegraf(WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN as string);
+const bot = new Telegraf(WHERE_IS_MY_COROLLA_APITOKEN as string);
 
 let interval: NodeJS.Timeout;
 
