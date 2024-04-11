@@ -3,10 +3,9 @@ USER node:node
 WORKDIR /where-is-my-corolla
 COPY ./src/ /where-is-my-corolla/src/
 COPY package.json tsconfig.json /where-is-my-corolla/
-# Uncomment this for manual configuration
-# ENV WHERE_IS_MY_COROLLA_USERNAME=<your-toyota-username>
-# ENV WHERE_IS_MY_COROLLA_PASSWORD=<your-toyota-password>
-# ENV WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN=<your-telegram-bot-apitoken>
+ENV WHERE_IS_MY_COROLLA_USERNAME=$WHERE_IS_MY_COROLLA_USERNAME
+ENV WHERE_IS_MY_COROLLA_PASSWORD=$WHERE_IS_MY_COROLLA_PASSWORD
+ENV WHERE_IS_MY_COROLLA_APITOKEN=$WHERE_IS_MY_COROLLA_APITOKEN
 RUN yarn
 RUN yarn build
 CMD node build/index.js

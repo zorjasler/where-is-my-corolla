@@ -7,7 +7,7 @@
     "build": "tsc -p .",
     "build:dev": "tsc -w -p .",
     "start": "node build/index.js",
-    "start:dev": "export WHERE_IS_MY_COROLLA_TELEGRAM_APITOKEN=<your-telegram-bot-apitoken> && export WHERE_IS_MY_COROLLA_USERNAME=<your-toyota-username> && export WHERE_IS_MY_COROLLA_PASSWORD=<your-toyota-password> && tsx watch src/index.ts",
+    "start:dev": "export WHERE_IS_MY_COROLLA_APITOKEN=<your-telegram-bot-apitoken> && export WHERE_IS_MY_COROLLA_USERNAME=<your-toyota-username> && export WHERE_IS_MY_COROLLA_PASSWORD=<your-toyota-password> && tsx watch src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
