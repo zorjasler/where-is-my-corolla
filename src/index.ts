@@ -4,7 +4,8 @@ import { ResponseData, States } from "./types";
 import { checkForChanges, fetch, parseData } from "./utils";
 
 const { WHERE_IS_MY_COROLLA_APITOKEN } = process.env;
-const INTERVAL = 60; // 60 * 60 * 1000 = 1h
+const DEFAULT_INTERVAL = 60; // 60 * 60 * 1000 = 1h
+let currentInterval = DEFAULT_INTERVAL;
 let lastResponseData: ResponseData | undefined;
 let state = States.NOT_STARTED;
 
@@ -19,11 +20,12 @@ bot.use((ctx: Context, next) => {
   return next();
 });
 
-async function pollData(ctx: Context) {
+const pollData = async (ctx: Context) => {
   const responseData = await fetch() as ResponseData;
   if (!responseData) {
-    console.log("There are no active orders to track");
-    return ctx.reply("There are no active orders to track");
+    const msg = 'There are no active orders to track';
+    console.log(msg);
+    return ctx.reply(msg);
   }
   if (checkForChanges(responseData, lastResponseData)) {
     console.log('Changes!');
@@ -34,34 +36,35 @@ async function pollData(ctx: Context) {
     });
   }
   console.log('No Changes');
-}
+};
 
-// Command handler
-bot.command("start", async (ctx: Context) => {
+// Commands
+const startPolling = async (ctx: Context) => {
   if (state !== States.STARTED) {
-    console.log("Fetching for the first time");
-    const responseData = await fetch();
-    if (!responseData) {
-      const msg = 'There are no active orders to track';
-      console.log(msg);
-      return ctx.reply(msg);
-    }
-    // Set most recent response for comparison
-    lastResponseData = _.cloneDeep(responseData);
     // Set polling interval
     interval = setInterval(async () => {
       await pollData(ctx);
-    }, INTERVAL * 60 * 1000);
-    await ctx.reply(`Polling every ${INTERVAL} min has started`);
+    }, currentInterval * 60 * 1000);
     state = States.STARTED;
-    return ctx.reply(parseData(responseData) as string, {
-      parse_mode: "HTML",
-    });
+    ctx.reply(`Polling every ${currentInterval} min has started`);
+    console.log("Fetching for the first time");
+    return pollData(ctx);
   }
   return ctx.reply("Polling already started");
-});
+};
 
-bot.command("fetch", async (ctx: Context) => {
+const stopPolling = (ctx: Context) => {
+  if (state === States.STARTED) {
+    clearInterval(interval);
+    lastResponseData = undefined;
+    state = States.STOPPED;
+    console.log("Polling has stopped");
+    return ctx.reply("Polling has stopped");
+  }
+  return ctx.reply("Polling hasn't started yet");
+};
+
+const fetchOnce = async (ctx: Context) => {
   const responseData = await fetch();
   if (!responseData) {
     const msg = 'There are no active orders to track';
@@ -71,49 +74,32 @@ bot.command("fetch", async (ctx: Context) => {
   return ctx.reply(parseData(responseData) as string, {
     parse_mode: "HTML",
   });
-});
+};
 
-bot.command("interval", async (ctx: Context) => {
+const setPollingInterval = async (ctx: Context) => {
+  const msg = (ctx.message as any).text;
+  const newInterval = msg.split(' ')[1];
+  if (!newInterval) return ctx.reply(`Current interval is ${currentInterval} min`);
+  if (Number.isNaN(parseInt(newInterval, 10))) return ctx.reply("Interval must be a number");
+  console.log(`Setting polling interval to ${currentInterval} min`);
+  currentInterval = newInterval;
   if (state === States.STARTED) {
-    const msg = (ctx.message as any).text;
-    const newInterval = parseInt(msg.split(' ').length ? msg.split(' ')[1] : INTERVAL, 10);
-    // Check interval value
-    if (Number.isNaN(newInterval)) return ctx.reply("Interval must be a number");
-    console.log(`Setting polling interval to ${newInterval} min`);
     // Clear old interval
     clearInterval(interval);
-    // Fetching after prior to interval change
-    const responseData = await fetch();
-    if (!responseData) {
-      const msg = 'There are no active orders to track';
-      console.log(msg);
-      return ctx.reply(msg);
-    }
-    // Set most recent response for comparison
-    lastResponseData = _.cloneDeep(responseData);
     // Set new interval
     interval = setInterval(async () => {
       await pollData(ctx);
-    }, newInterval * 60 * 1000);
-    console.log(`Polling interval set to ${newInterval} min`);
-    await ctx.reply(`Polling interval set to ${newInterval} min`);
-    return ctx.reply(parseData(responseData) as string, {
-      parse_mode: "HTML",
-    });
+    }, currentInterval * 60 * 1000);
   }
-  return ctx.reply("Polling hasn't started yet");
-});
+  const intervalMsg = `Polling interval set to ${currentInterval} min`;
+  console.log(intervalMsg);
+  return ctx.reply(intervalMsg);
+};
 
-bot.command("stop", (ctx: Context) => {
-  if (state === States.STARTED) {
-    clearInterval(interval);
-    lastResponseData = undefined;
-    state = States.STOPPED;
-    console.log("Polling has stopped");
-    return ctx.reply("Polling has stopped");
-  }
-  return ctx.reply("Polling hasn't started yet");
-});
+bot.command("start", startPolling);
+bot.command("stop", stopPolling);
+bot.command("fetch", fetchOnce);
+bot.command("interval", setPollingInterval);
 
 bot.on("message", (ctx: Context) => {
   return ctx.reply((ctx.message as any).text);
